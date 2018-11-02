@@ -1,3 +1,18 @@
+/**********************PART 3*******************************
+ * Provide an analysis of the behavior of the resistor ladder (keyboard), mode selector and what is occurring on the Arduino as a voltage. How does the input become audiblesound?
+ * 
+ * For the resistor ladder buttons, because they are in series and because since I used different values of resistors and since they are in sink with the piezo buzzer, when I press 
+ * on one, it will allow current to pass and because it will produce a value between 0 and 1023, that will be the frequency that the buzzer will read.
+ * For the human ear, however, we cannot hear from 0 to around 30-40 so we need to make sure, specifically for the last button where the current gets smaller, that there is enough 
+ * current passing for us to hear the sound. The voltage starts with 5V and goes to ground to close our circuit (0V). 
+ * For the mode selector, it is connected to a PWM so it can either be read as digital or analog. There's also a resistor after that button to control the current.
+ *
+ *
+ */
+/************************************************************/
+
+
+
 /**********************ETUDE 2 CART 360 2017*******************************
  * WELCOME! 
  * THE PURPOSE OF THIS EXERCISE IS TO DESIGN A VERY SIMPLE KEYBOARD (5 KEYS)
@@ -42,17 +57,16 @@ const int duration = 200;
 #define BUZZER_PIN 3 // PWM
 
 
-
-
-
-
-
 /******** VARIABLES *****************************************************/
 // counter for how many notes we have
 int countNotes = 0;
 int mode = 0; // start at off
 // array to hold the notes played (for record/play mode)
 int notes [MAX_NOTES]; 
+int prev=LOW;
+int bs=LOW;
+int counter=0;
+
 
 /*************************************************************************/
 
@@ -95,24 +109,25 @@ void loop()
  * (i.e. if mode ==2 and we press, then mode ==3) ...
 **************************************************************************/
 void chooseMode(){ // previous mode
-  // IMPLEMENT
-  
-  
-  if (digitalRead(BUTTON_MODE_PIN) ==HIGH && mode!=5)
-    { 
-      mode++;
-      delay(200);
-    } 
-    else
-    {
-      mode==0;
-      
-      }
-
-   
- 
- 
-}
+        prev=LOW;
+         
+        bs = digitalRead(BUTTON_MODE_PIN); 
+        if(mode !=5){
+          
+                 if (bs != prev ) { 
+                                    mode++;
+                                    delay(300);
+                                  } 
+                else{
+                      prev = bs;
+                    }
+        }
+        
+        else
+        {
+          mode=0;
+          }
+  }
 
 /******************SETRGB(): IMPLEMENT *********************************
  * INSTRUCTIONS:
@@ -193,6 +208,7 @@ void selectMode()
   
   else if(mode == 3) {
     play();
+    
   }
    
    else if(mode == 4) {
@@ -205,10 +221,13 @@ void selectMode()
 **************************************************************************/
 void reset()
 { 
-  for(int i=0; i<16; i++){
-  notes[i]=0;
-}
-  
+ for(int i=0; i<MAX_NOTES; i++)
+  { 
+    notes [i] =0;
+    int k = notes [i]; 
+   
+    }
+     delay(200);
 }
 /******************LIVE(): IMPLEMENT **************************************
  * INSTRUCTIONS:
@@ -219,17 +238,19 @@ void reset()
  * THEN - output the note to the buzzer using the tone() function
 **************************************************************************/
 void live() // NOISE AND PEAK VALUE PROBABLY NEED TO BE HANDLE
-{  
-
-
-    if(analogRead(BUZZER_PIN==HIGH))
-    {
-       tone(BUZZER_PIN, duration);
+{  long myNote;
+    
+    if(analogRead(HIGH))
+    { 
+      
+        myNote = analogRead(NOTE_IN_PIN);
+       tone(BUZZER_PIN, myNote,200);
       }
       else
-    {
-        noTone(BUZZER_PIN);
-      }
+      {
+        analogRead(LOW);
+        }
+      
        
 
 }
@@ -243,25 +264,29 @@ void live() // NOISE AND PEAK VALUE PROBABLY NEED TO BE HANDLE
  * THEN store that note in the array  - BE CAREFUL - you can only allow for up to MAX_NOTES to be stored
 **************************************************************************/
 void record(){
-   
+
+  
+  
    for(int i=0; i<16; i++){
-   if(analogRead(BUZZER_PIN)==HIGH)
-   {
-    notes[i]=analogRead(BUZZER_PIN);
-    }
- 
-      else{
-         noTone(BUZZER_PIN);
+    
+   
+      if(analogRead(HIGH)){
+        
+      analogRead(NOTE_IN_PIN);
+      tone(BUZZER_PIN,NOTE_IN_PIN,200);
+      notes[i]=analogRead(NOTE_IN_PIN);
+      }
+
+      else
+      {
+       
+        analogRead(LOW);
         }
      
-   }
-     noTone(BUZZER_PIN);
-     }
      
-      
-
-
-
+   }
+}
+     
 /******************PLAY(): IMPLEMENT ************************************
  * INSTRUCTIONS:
  * this function will playback any notes stored in the array that were recorded
@@ -273,9 +298,33 @@ void record(){
  * BE CAREFUL: make sure you allow for the user to get to another mode from the mode button...
 **************************************************************************/
 void play()
-{
-  // IMPLEMENT
+{    
+
+long n,t;
+long i=0;    
+   
+  
+bs = digitalRead(BUTTON_MODE_PIN);
+     if( i<= counter){
+     
+     
+      n = notes [i];
+     
+      tone(BUZZER_PIN,n,200);
+      delay(400);
+      i++;
+      
+      if(bs!=prev)
+                   {
+                    selectMode();
+                    analogRead(LOW);
+                  
+                    }
+      delay(200);
+    } 
+  
 }
+
 /******************LOOPMODE(): IMPLEMENT *********************************
  * INSTRUCTIONS:
  * this function will playback any notes stored in the array that were recorded
@@ -287,8 +336,21 @@ void play()
  * BE CAREFUL: make sure you allow for the user to get to another mode from the mode button...
 **************************************************************************/
 void looper()
-{
-  //IMPLEMENT
+{  bs = digitalRead(BUTTON_MODE_PIN);
+
+  for(int value=0; value<counter; value++){
+  randomSeed(value);
+  value = random(0, counter);
+  analogRead(notes[value]);
+  delay(400);
+  tone(BUZZER_PIN, notes[value], 200);
+   if(bs!=prev)
+                   {
+                    selectMode();
+                    analogRead(LOW);
+                  
+                    }
+  }
 }
 
 
